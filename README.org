@@ -1,0 +1,122 @@
+* check_play
+
+Simple Nagios Plugin that check's lives Play! App.
+
+* Install 
+
+#+BEGIN_SRC sh
+go get github.com/communaute-cimi/check_play
+#+END_SRC
+
+or you can dwl bin in bin rep.
+
+** nagios client (play srv)
+
+*** Install
+
+#+BEGIN_SRC sh
+apt-get install nagios-nrpe-server
+cp check_play /usr/lib/nagios/plugins
+#+END_SRC
+
+*** /etc/nagios/nrpe.cfg
+
+#+BEGIN_SRC 
+allowed_hosts=127.0.0.1,10.226.150.175
+dont_blame_nrpe=1
+command_prefix=/usr/bin/sudo # need for check pid
+command[check_play]=/usr/lib/nagios/plugins/check_play
+# or command[check_play]=/usr/lib/nagios/plugins/check_play -c /opt/etc/maconf.json
+#+END_SRC
+
+*** Edit sudoer
+
+#+BEGIN_SRC 
+nagios          ALL=(ALL) NOPASSWD: /usr/lib/nagios/plugins/
+#+END_SRC
+
+*** Restart nrpe server
+
+#+BEGIN_SRC sh
+restart /etc/init.d/nagios-nrpe-server restart
+#+END_SRC
+
+** nagios server
+
+*** Install
+
+#+BEGIN_SRC 
+apt-get install nagios-nrpe-server
+#+END_SRC
+
+*** host exemple
+
+#+BEGIN_SRC 
+define host{
+        use                     generic-host
+	host_name		playprod.swap
+        alias                   playprod
+        address                 10.226.150.158
+        }
+
+define service{
+        use                             generic-service         ; Name of service template to use
+        host_name                       playprod.swap
+        service_description             Disk Space
+        check_command                   check_nrpe!check_rootfs!10!s!20%!10%
+}
+
+define service{
+       use			generic-service
+       host_name 		playprod.swap
+       service_description 	LoadAV
+       check_command 		check_nrpe!check_load!10
+}
+
+define service{
+       use			generic-service
+       host_name 		playprod.swap
+       service_description 	PlayApps
+       check_command 		check_nrpe!check_play!5
+}
+#+END_SRC
+
+* Usage
+
+#+BEGIN_SRC sh
+check_play -c /etc/myconf.json
+#+END_SRC
+
+* Config sample
+
+maxfailure and nagios code :
+
+#+BEGIN_SRC 
+if 0 failure : OK
+if nbfailure >= maxfailure : Critical
+if nbfailure < maxfailure : Warn
+#+END_SRC
+
+#+BEGIN_SRC json
+{
+    "maxfailure":2,
+    "apps":[
+	{
+	    "name":"gsp2-prod",
+	    "home":"/var/www/playapps/gsp2/release",
+	    "startcmd":"play start --%prod",
+	    "user":"play"
+	}, {
+	    "name":"transverse",
+	    "home":"/var/www/playapps/transverse/referentiel/release",
+	    "startcmd":"play start --%dev",
+	    "user":"play"
+	}, {
+	    "name":"metier",
+	    "home":"/var/www/playapps/metier/projets/release",
+	    "startcmd":"play start --%dev",
+	    "user":"play"
+	}
+    ]
+}
+#+END_SRC
