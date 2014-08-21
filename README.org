@@ -2,6 +2,10 @@
 
 Simple Nagios Plugin that check's lives Play! App.
 
+[[/media/ok.png]]
+
+[[/media/warn.png]]
+
 * Install 
 
 #+BEGIN_SRC sh
